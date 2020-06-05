@@ -1,49 +1,36 @@
+from collections import defaultdict
+
 import boto3
-from Modules.getstate import GetState
 
-from datetime import datetime
-import csv
+"""
+A tool for retrieving basic information from the running EC2 instances.
+"""
 
-get_regions = GetRegion()
-# Getting all the region
-Regions = get_regions.get_regions()
-RegionInstance = {}
-for r in Regions:
-    # Getting all the instances in that particular region
-    ec2Client = boto3.client('ec2', region_name=r)
-    instances = ec2Client.describe_instances()
-    try:
-        Instances = instances["Reservations"]
-        InstanceList = []
-        for ins in Instances:
-            InsID = ins["Instances"][0]['InstanceId']
-            InstanceList.append(InsID)
-            print(InsID)
-    except IndexError:
-        print(r + ",No Instances")
-    RegionInstance[r] = InstanceList
+# Connect to EC2
+ec2 = boto3.resource('ec2')
 
-Metadata = {}
+# Get information for all running instances
+running_instances = ec2.instances.filter(Filters=[{
+    'Name': 'instance-state-name',
+    'Values': ['running']}])
 
-for region in RegionInstance.keys():
-    InstDetails = []
-    for inst in RegionInstance[region]:
-        InstMetadata = {}
-        Details = []
-        # Getting Status of the Instance
-        get_status = GetState(region, inst)
-        # Getting OS of the instance in the region
+ec2info = defaultdict()
+for instance in running_instances:
+    for tag in instance.tags:
+        if 'Name'in tag['Key']:
+            name = tag['Value']
+    # Add instance info to a dictionary         
+    ec2info[instance.id] = {
+        'Name': name,
+        'Type': instance.instance_type,
+        'State': instance.state['Name'],
+        'Private IP': instance.private_ip_address,
+        'Public IP': instance.public_ip_address,
+        'Launch Time': instance.launch_time
+        }
 
-        status = get_status.get_state()
-        Details = [status, platform, type, reservation]
-        InstMetadata[inst] = Details
-        InstDetails.append(InstMetadata)
-    Metadata[region] = InstDetails
-
-# Writing the output in a CSV File
-print(Metadata)
-datenow = datetime.now()
-date = datenow.strftime("%d-%B-%Y-%H-%M")
-
-
-
+attributes = ['Name', 'Type', 'State', 'Private IP', 'Public IP', 'Launch Time']
+for instance_id, instance in ec2info.items():
+    for key in attributes:
+        print("{0}: {1}".format(key, instance[key]))
+    print("------")
