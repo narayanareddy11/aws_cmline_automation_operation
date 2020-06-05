@@ -44,11 +44,6 @@ for region in RegionInstance.keys():
 print(Metadata)
 datenow = datetime.now()
 date = datenow.strftime("%d-%B-%Y-%H-%M")
-CSVFile = "C:\\Users\\arnabnandy1\\Documents\\Codes\\AwsMetadata\\CSV\\csv_outputs\\ec2_status_output_" + date + ".csv"
-# CSVFile = "/Users/arnabnandy/PycharmProjects/aws_metadata/CSV/csv_outputs/ec2_status_output_"+ date + ".csv"
 
-with open(CSVFile, 'w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerow(["Region", "InstanceID", "Status", "Platform", "InstanceType", "Bill Type"])
 
 
